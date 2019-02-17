@@ -1,5 +1,5 @@
-import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup } from '@angular/forms';
+import { Component, OnInit, Output, EventEmitter} from '@angular/core';
+import { FormBuilder, FormGroup, Validators, FormControl, AbstractControl } from '@angular/forms';
 import { User } from '../user';
 
 @Component({
@@ -9,6 +9,7 @@ import { User } from '../user';
 })
 export class FormComponent implements OnInit {
   formGroup: FormGroup;
+  @Output() change = new EventEmitter();
   constructor(
     public fb: FormBuilder
     ) { 
@@ -17,18 +18,39 @@ export class FormComponent implements OnInit {
     
   ngOnInit() {
     this.formGroup =  this.fb.group({
-      firstN: [''],
-      lastN: this.fb.control(''),
-      email: [''],
-      age: [''],
+      firstN: ['',[Validators.required,Validators.minLength(2)]],
+      lastN: this.fb.control('',[Validators.required,Validators.minLength(2)]),
+      email: ['',[Validators.required,Validators.email]],
+      age: [,[Validators.required,Validators.min(0),Validators.max(99)]],
     })
   }
 
+EmailValidator(control: AbstractControl){
+  const value:string = control.value;
+  if(value && value.includes('@')){
+    return null;
+  }
+  return{
+    email: {
+      actual: value,
+      expect: 'email@emample.com'
+    }
+  }
+}
+
   onSubmit(form: FormGroup){
-    console.log(form);
+    if (form.valid) {
     const {firstN,lastN,email,age} = form.value;
-    console.log(firstN,lastN,email,age);
     const user = new User(firstN,lastN,email,age);
-    console.log(user);
+    this.change.emit(user);
+    } else {
+      ['firstN',
+        'lastN',
+        'age',
+        'email'].forEach((key: string)=>{
+          form.get(key).markAsTouched();
+        })
+    }
+    
   }
 }
